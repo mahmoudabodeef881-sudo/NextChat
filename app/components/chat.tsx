@@ -987,7 +987,38 @@ export function ShortcutKeyModal(props: { onClose: () => void }) {
   );
 }
 
+const APP_CSS = "body{font-family:\"Noto Sans Arabic\",\"Segoe UI\",Tahoma,sans-serif}\n:root{--primary:#2563eb;--second:#eef4ff;--gray:#f6f7fb}\n[class*=\"chat_chat-message-user_\"] [class*=\"chat_chat-message-item_\"]{background:#2563eb!important;color:#fff!important;border:0!important;border-radius:20px 20px 4px 20px!important;box-shadow:none!important}\n[class*=\"chat_chat-message-user_\"] [class*=\"chat_chat-message-item_\"] *{color:#fff!important}\n[class*=\"chat_chat-message-item_\"]{border-radius:20px 20px 20px 4px!important;font-size:17px!important;line-height:1.75!important;padding:12px 16px!important;border:0!important;background:#f1f3f9;box-shadow:none!important;max-width:92%!important}\n[class*=\"chat_chat-message-action-date_\"]{display:none!important}\n[class*=\"chat_chat-message-avatar_\"]{display:none!important}\n[class*=\"chat_chat-model-name_\"]{font-size:12px!important;opacity:.6;margin-bottom:4px}\n[class*=\"chat_chat-message_\"]{margin-top:4px!important;margin-bottom:4px!important}\n[class*=\"chat_chat-input-panel_\"]{padding:8px 12px 12px!important;border-top:0!important;background:transparent!important}\n[class*=\"chat_chat-input-panel-inner_\"]{border-radius:26px!important;border:1px solid #d6dbe8!important;box-shadow:0 2px 10px rgba(30,60,150,.08)!important;background:#fff!important;padding:4px!important}\n[class*=\"chat_chat-input_\"]{font-size:17px!important;min-height:52px!important;padding:14px 16px!important;border:0!important;box-shadow:none!important;background:transparent!important;outline:0!important}\n[class*=\"chat_chat-input-send_\"]{border-radius:20px!important;background:#2563eb!important;height:44px!important;min-width:44px!important;bottom:10px!important}\n[class*=\"chat_chat-input-actions_\"]{gap:6px!important;padding-bottom:8px;flex-wrap:nowrap!important;overflow-x:auto;white-space:nowrap}\n[class*=\"chat_chat-input-action_\"]{flex:0 0 auto!important;min-width:40px;width:40px!important;overflow:hidden}\n[class*=\"chat_chat-message-container_\"]{margin-bottom:0!important}\n[class*=\"chat_chat-input-action_\"]{height:40px!important;width:40px!important;border-radius:20px!important;border:0!important;background:#eef1f8!important;box-shadow:none!important}\n.window-header{padding:12px 14px!important;border-bottom:0!important;box-shadow:0 1px 0 rgba(0,0,0,.05)}\n.window-header-main-title{font-size:19px!important;font-weight:700}\n.window-header-sub-title{display:none!important}\n.window-action-button button,.window-action-button>*{border-radius:16px!important;border:0!important;background:#eef1f8!important}\n[class*=\"home_chat-item_\"]{border-radius:18px!important;border:0!important;box-shadow:none!important;background:#f3f5fb!important;padding:14px 16px!important}\n[class*=\"home_chat-item-selected_\"]{background:#dbe7ff!important;outline:2px solid #2563eb}\n[class*=\"home_chat-item-title_\"]{font-size:16px!important;font-weight:600}\n[class*=\"home_sidebar-sub-title_\"]{display:none!important}\n[class*=\"home_sidebar-title_\"]{font-size:22px!important}\n@media (max-width:600px){\n [class*=\"chat_chat-message-container_\"]{max-width:100%!important}\n}\nbody.dark [class*=\"chat_chat-message-item_\"]{background:#1f2433!important;color:#e8eaf2!important}\nbody.dark [class*=\"chat_chat-input_\"]{background:#1b1f2c!important;border-color:#2e3550!important;color:#fff!important}\nbody.dark [class*=\"chat_chat-input-action_\"],body.dark .window-action-button>*{background:#252b3d!important}\nbody.dark [class*=\"home_chat-item_\"]{background:#1f2433!important}\nbody.dark [class*=\"home_chat-item-selected_\"]{background:#26314f!important}\n[class*=\"chat_chat-message-header_\"]{margin-top:6px!important}\n[class*=\"chat_chat-input-action_\"]{width:44px!important;min-width:44px!important;max-width:44px!important;padding:0!important;justify-content:center}\n[class*=\"chat_chat-input-action_\"] [class*=\"chat_text_\"]{display:none!important}\n[class*=\"chat_chat-input-actions_\"]::-webkit-scrollbar{display:none}\n[class*=\"chat_chat-message-actions_\"]{margin-top:2px}\n";
+
+function downloadReply(text: string, kind: "doc" | "txt") {
+  const name = "reply-" + new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+  let blob: Blob;
+  let ext: string;
+  if (kind === "doc") {
+    const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>");
+    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"></head><body dir="rtl" style="font-family:Arial;font-size:14pt;line-height:1.6">' + esc + "</body></html>";
+    blob = new Blob(["\ufeff", html], { type: "application/msword" });
+    ext = "doc";
+  } else {
+    blob = new Blob(["\ufeff", text], { type: "text/plain;charset=utf-8" });
+    ext = "txt";
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name + "." + ext;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
 function _Chat() {
+  useEffect(() => {
+    if (document.getElementById("app-restyle")) return;
+    const s = document.createElement("style");
+    s.id = "app-restyle";
+    s.textContent = APP_CSS;
+    document.head.appendChild(s);
+  }, []);
   type RenderMessage = ChatMessage & { preview?: boolean };
 
   const chatStore = useChatStore();
@@ -1900,6 +1931,20 @@ function _Chat() {
                                         }
                                       />
 
+                                      <ChatAction
+                                        text="Word"
+                                        icon={<ExportIcon />}
+                                        onClick={() =>
+                                          downloadReply(getMessageTextContent(message), "doc")
+                                        }
+                                      />
+                                      <ChatAction
+                                        text="TXT"
+                                        icon={<ExportIcon />}
+                                        onClick={() =>
+                                          downloadReply(getMessageTextContent(message), "txt")
+                                        }
+                                      />
                                       <ChatAction
                                         text={Locale.Chat.Actions.Pin}
                                         icon={<PinIcon />}
