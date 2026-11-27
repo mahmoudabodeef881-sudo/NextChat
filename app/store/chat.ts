@@ -410,7 +410,11 @@ export const useChatStore = createPersistStore(
         isMcpResponse?: boolean,
       ) {
         const session = get().currentSession();
-        const modelConfig = session.mask.modelConfig;
+        const modelConfig = {
+          ...session.mask.modelConfig,
+          historyMessageCount: Math.min(session.mask.modelConfig.historyMessageCount, 8),
+          max_tokens: Math.min(session.mask.modelConfig.max_tokens, 2500),
+        };
 
         // MCP Response no need to fill template
         let mContent: string | MultimodalContent[] = isMcpResponse
@@ -497,12 +501,12 @@ export const useChatStore = createPersistStore(
           },
           onError(error) {
             const isAborted = error.message?.includes?.("aborted");
+            const isRate = /rate_limit|rate limit|Too Many Requests|429/i.test(String(error.message || ""));
             botMessage.content +=
               "\n\n" +
-              prettyObject({
-                error: true,
-                message: error.message,
-              });
+              (isRate
+                ? "⚠️ وصلت للحد المجاني على النموذج ده (عدد الكلمات في الدقيقة). استنى حوالي دقيقة وبعدين اضغط إعادة المحاولة، أو غيّر النموذج من أيقونة الروبوت إلى nvidia/nemotron أو openrouter/free."
+                : prettyObject({ error: true, message: error.message }));
             botMessage.streaming = false;
             userMessage.isError = !isAborted;
             botMessage.isError = !isAborted;
@@ -541,7 +545,11 @@ export const useChatStore = createPersistStore(
 
       async getMessagesWithMemory() {
         const session = get().currentSession();
-        const modelConfig = session.mask.modelConfig;
+        const modelConfig = {
+          ...session.mask.modelConfig,
+          historyMessageCount: Math.min(session.mask.modelConfig.historyMessageCount, 8),
+          max_tokens: Math.min(session.mask.modelConfig.max_tokens, 2500),
+        };
         const clearContextIndex = session.clearContextIndex ?? 0;
         const messages = session.messages.slice();
         const totalMessageCount = session.messages.length;
@@ -664,7 +672,11 @@ export const useChatStore = createPersistStore(
       ) {
         const config = useAppConfig.getState();
         const session = targetSession;
-        const modelConfig = session.mask.modelConfig;
+        const modelConfig = {
+          ...session.mask.modelConfig,
+          historyMessageCount: Math.min(session.mask.modelConfig.historyMessageCount, 8),
+          max_tokens: Math.min(session.mask.modelConfig.max_tokens, 2500),
+        };
         // skip summarize when using dalle3?
         if (isDalle3(modelConfig.model)) {
           return;
