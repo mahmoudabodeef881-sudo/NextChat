@@ -157,7 +157,7 @@ export const STT_LANG_MAP: Record<Lang, string> = {
   ru: "ru-RU",
   cs: "cs-CZ",
   no: "no-NO",
-  ar: "ar-SA",
+  ar: "ar-EG",
   bn: "bn-BD",
   sk: "sk-SK",
 };
