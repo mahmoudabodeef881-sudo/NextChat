@@ -120,7 +120,7 @@ export function getLang(): Lang {
     return savedLang as Lang;
   }
 
-  return getLanguage();
+  return DEFAULT_LANG;
 }
 
 export function changeLang(lang: Lang) {
